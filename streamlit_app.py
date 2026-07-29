@@ -1,14 +1,20 @@
 import streamlit as st
 import pandas as pd
 import ast
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import (
     mean_absolute_error,
     r2_score,
-    accuracy_score
+    accuracy_score,
+    precision_score,
+    recall_score,
+    confusion_matrix
 )
+
 from scipy.stats import ttest_ind, chi2_contingency
 
 
@@ -395,6 +401,26 @@ input {
 """, unsafe_allow_html=True
 )
 
+
+# ==============================
+# LOAD MOVIEIQ DATASET
+# ==============================
+
+df = pd.read_csv("data/movieIQ.csv")
+
+# Calculate profit
+df["profit"] = df["revenue"] - df["budget"]
+
+# Define movie success
+df["success"] = (df["revenue"] > df["budget"]).astype(int)
+
+# Clean the genres column
+df["genres"] = df["genres"].apply(ast.literal_eval)
+
+df["genre"] = df["genres"].apply(
+    lambda x: x[0]["name"] if len(x) > 0 else "Unknown"
+)
+
 # ==============================
 # SIDEBAR NAVIGATION
 # ==============================
@@ -435,25 +461,22 @@ st.sidebar.caption(
     "MovieIQ | Data Analytics & Machine Learning"
 )
 
-# ==============================
-# LOAD MOVIEIQ DATASET
-# ==============================
+st.sidebar.divider()
 
-df = pd.read_csv("data/movieIQ.csv")
+st.sidebar.subheader("🎛️ Data Filters")
 
-# Calculate profit
-df["profit"] = df["revenue"] - df["budget"]
-
-# Define movie success
-df["success"] = (df["revenue"] > df["budget"]).astype(int)
-
-# Clean the genres column
-df["genres"] = df["genres"].apply(ast.literal_eval)
-
-df["genre"] = df["genres"].apply(
-    lambda x: x[0]["name"] if len(x) > 0 else "Unknown"
+genre_filter = st.sidebar.selectbox(
+    "🎭 Filter by Genre",
+    ["All"] + sorted(df["genre"].unique().tolist())
 )
 
+min_rating = st.sidebar.slider(
+    "⭐ Minimum Vote Average",
+    min_value=0.0,
+    max_value=10.0,
+    value=0.0,
+    step=0.1
+)
 
 # ==============================
 # OVERVIEW PAGE
@@ -736,7 +759,6 @@ if page == "🔥 Movie Insights":
         "This analysis compares successful and unsuccessful movies "
         "based on popularity, runtime, and average audience rating."
     )
-    
     # Calculate average values for successful and unsuccessful movies
     success_factors = df.groupby("success")[
         [
@@ -965,6 +987,65 @@ if page == "💰 Financial Analysis":
         x="budget",
         y="revenue"
     )
+    st.divider()
+
+
+    # ==============================
+    # CORRELATION HEATMAP
+    # ==============================
+
+    st.subheader("🔥 Correlation Heatmap")
+
+    st.write(
+        "The correlation heatmap shows the strength of relationships "
+        "between the main numeric movie features. Values closer to "
+        "1 indicate a strong positive relationship, values closer to "
+        "-1 indicate a strong negative relationship, and values near "
+        "0 indicate a weak relationship."
+    )
+
+    correlation_data = df[
+        [
+            "budget",
+            "revenue",
+            "popularity",
+            "runtime",
+            "vote_average",
+            "profit",
+            "success"
+        ]
+    ]
+
+    correlation_matrix = correlation_data.corr()
+
+    fig, ax = plt.subplots(
+        figsize=(10, 7)
+    )
+
+    sns.heatmap(
+        correlation_matrix,
+        annot=True,
+        fmt=".2f",
+        cmap="coolwarm",
+        linewidths=0.5,
+        ax=ax
+    )
+
+    ax.set_title(
+        "Correlation Heatmap of Movie Features"
+    )
+
+    st.pyplot(
+        fig,
+        use_container_width=True
+    )
+
+    st.info(
+        "The heatmap helps identify which numeric features are "
+        "strongly related to each other. Strong correlations should "
+        "be considered when interpreting the machine learning model, "
+        "as highly related features may provide overlapping information."
+    )
 
     st.subheader("💡 Key Insight")
 
@@ -977,7 +1058,7 @@ if page == "💰 Financial Analysis":
         "alone determines a movie's success."
     )
 
-    # ==============================
+# ==============================
 # SUCCESS PREDICTOR PAGE
 # ==============================
 
@@ -1002,14 +1083,14 @@ if page == "🤖 Success Predictor":
     # FEATURES AND TARGET
     # ==============================
 
-    X = df[
-        [
-            "budget",
-            "popularity",
-            "runtime",
-            "vote_average"
-        ]
+    features = [
+        "budget",
+        "popularity",
+        "runtime",
+        "vote_average"
     ]
+
+    X = df[features]
 
     y = df["success"]
 
@@ -1038,48 +1119,6 @@ if page == "🤖 Success Predictor":
         X_train,
         y_train
     )
-    # ==============================
-        # RANDOM FOREST
-        # ==============================
-    
-    X_rf = df[
-            [
-                "budget",
-                "popularity",
-                "runtime",
-                "vote_average"
-            ]
-        ]
-    
-    y_rf = df["success"]
-    
-    X_train_rf, X_test_rf, y_train_rf, y_test_rf = train_test_split(
-            X_rf,
-            y_rf,
-            test_size=0.2,
-            random_state=42,
-            stratify=y_rf
-        )
-    
-    random_forest_model = RandomForestClassifier(
-            n_estimators=100,
-            random_state=42
-        )
-    
-    random_forest_model.fit(
-            X_train_rf,
-            y_train_rf
-        )
-    
-    rf_predictions = random_forest_model.predict(
-            X_test_rf
-        )
-    
-    rf_accuracy = accuracy_score(
-            y_test_rf,
-            rf_predictions
-        )
-    
 
     # ==============================
     # MODEL EVALUATION
@@ -1094,9 +1133,88 @@ if page == "🤖 Success Predictor":
         test_predictions
     )
 
+    precision = precision_score(
+        y_test,
+        test_predictions,
+        zero_division=0
+    )
+
+    recall = recall_score(
+        y_test,
+        test_predictions,
+        zero_division=0
+    )
+
+    cm = confusion_matrix(
+        y_test,
+        test_predictions
+    )
+
+    # ==============================
+    # FEATURE IMPORTANCE
+    # ==============================
+
+    st.divider()
+
+    st.subheader("🌟 Feature Importance")
+
+    st.write(
+        "Feature importance shows which input variables contribute "
+        "most to the Random Forest model's prediction of movie success."
+    )
+
+    feature_importance = pd.DataFrame({
+        "Feature": features,
+        "Importance": model.feature_importances_
+    })
+
+    feature_importance = feature_importance.sort_values(
+        by="Importance",
+        ascending=False
+    )
+
+    st.subheader("📋 Feature Importance Table")
+
+    st.dataframe(
+        feature_importance,
+        use_container_width=True
+    )
+
+    st.subheader("📊 Feature Importance Visualization")
+
+    st.bar_chart(
+        feature_importance.set_index(
+            "Feature"
+        )["Importance"]
+    )
+
+    most_important_feature = (
+        feature_importance.iloc[0]["Feature"]
+    )
+
+    most_important_value = (
+        feature_importance.iloc[0]["Importance"]
+    )
+
+    st.success(
+        f"🌟 The most important feature for predicting movie success "
+        f"in the Random Forest model is **{most_important_feature}**, "
+        f"with an importance score of {most_important_value:.4f}."
+    )
+
+    st.info(
+        "Feature importance indicates how useful each feature was "
+        "to the Random Forest model when making predictions. "
+        "A higher importance score means the feature contributed "
+        "more to the model's decisions. However, feature importance "
+        "does not prove that a feature directly causes movie success."
+    )
+
     # ==============================
     # USER INPUT
     # ==============================
+
+    st.divider()
 
     st.subheader("🎬 Enter Movie Details")
 
@@ -1183,26 +1301,95 @@ if page == "🤖 Success Predictor":
             f"{probability * 100:.2f}%"
         )
 
+    # ==============================
+    # MODEL PERFORMANCE
+    # ==============================
+
     st.divider()
 
+    st.subheader("📈 Model Performance")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.metric(
+            "🎯 Accuracy",
+            f"{accuracy * 100:.2f}%"
+        )
+
+    with col2:
+
+        st.metric(
+            "🎯 Precision",
+            f"{precision * 100:.2f}%"
+        )
+
+    with col3:
+
+        st.metric(
+            "🎯 Recall",
+            f"{recall * 100:.2f}%"
+        )
+
     # ==============================
-    # MODEL ACCURACY
+    # CONFUSION MATRIX
     # ==============================
 
-    st.subheader(
-        "📈 Model Performance"
+    st.subheader("🔲 Confusion Matrix")
+
+    st.write(
+        "The confusion matrix shows how accurately the Random Forest "
+        "model classified successful and unsuccessful movies."
     )
 
-    st.metric(
-        "🎯 Random Forest Accuracy",
-        f"{accuracy * 100:.2f}%"
+    confusion_matrix_df = pd.DataFrame(
+        cm,
+        index=[
+            "Actual Unsuccessful",
+            "Actual Successful"
+        ],
+        columns=[
+            "Predicted Unsuccessful",
+            "Predicted Successful"
+        ]
     )
+
+    st.dataframe(
+        confusion_matrix_df,
+        use_container_width=True
+    )
+
+    st.subheader("📊 Confusion Matrix Visualization")
+
+    fig, ax = plt.subplots()
+
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=[
+            "Predicted Unsuccessful",
+            "Predicted Successful"
+        ],
+        yticklabels=[
+            "Actual Unsuccessful",
+            "Actual Successful"
+        ],
+        ax=ax
+    )
+
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
+
+    st.pyplot(fig)
 
 # ==============================
 # REVENUE PREDICTOR PAGE
 # ==============================
 
-if page == "💵 Revenue Predictor":
+if page == "💵Revenue Predictor":
 
     st.header("💵 Revenue Predictor")
 
@@ -1216,6 +1403,65 @@ if page == "💵 Revenue Predictor":
         "a Linear Regression model trained on historical "
         "movie data to estimate potential revenue."
     )
+
+    # ==============================
+    # FEATURES AND TARGET
+    # ==============================
+
+    features = [
+        "budget",
+        "popularity",
+        "runtime",
+        "vote_average"
+    ]
+
+    X = df[features]
+    y = df["revenue"]
+
+    # ==============================
+    # TRAIN TEST SPLIT
+    # ==============================
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42
+    )
+
+    # ==============================
+    # LINEAR REGRESSION MODEL
+    # ==============================
+
+    revenue_model = LinearRegression()
+
+    revenue_model.fit(
+        X_train,
+        y_train
+    )
+
+    # ==============================
+    # MODEL EVALUATION
+    # ==============================
+
+    revenue_test_predictions = revenue_model.predict(
+        X_test
+    )
+
+    revenue_mae = mean_absolute_error(
+        y_test,
+        revenue_test_predictions
+    )
+
+    revenue_r2 = r2_score(
+        y_test,
+        revenue_test_predictions
+    )
+
+    # ==============================
+    # MODEL INFORMATION
+    # ==============================
+
     st.subheader("🧠 Prediction Model")
 
     col1, col2, col3 = st.columns(3)
@@ -1238,31 +1484,39 @@ if page == "💵 Revenue Predictor":
             "Movie Revenue"
         )
 
+    # ==============================
+    # MODEL PERFORMANCE
+    # ==============================
+
     st.divider()
-    X = df[
-        [
-            "budget",
-            "popularity",
-            "runtime",
-            "vote_average"
-        ]
-    ]
 
-    y = df["revenue"]
+    st.subheader("📈 Model Performance")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric(
+            "R² Score",
+            f"{revenue_r2:.4f}"
+        )
+
+    with col2:
+        st.metric(
+            "Mean Absolute Error",
+            f"${revenue_mae:,.0f}"
+        )
+
+    st.info(
+        "R² Score indicates how well the model explains variations "
+        "in movie revenue. Mean Absolute Error represents the average "
+        "difference between the predicted and actual revenue."
     )
 
-    model = LinearRegression()
+    # ==============================
+    # USER INPUT
+    # ==============================
 
-    model.fit(
-        X_train,
-        y_train
-    )
+    st.divider()
 
     st.subheader("🎬 Enter Movie Details")
 
@@ -1270,53 +1524,62 @@ if page == "💵 Revenue Predictor":
 
     with col1:
 
-        budget_input = st.number_input(
+        revenue_budget_input = st.number_input(
             "💰 Production Budget ($)",
             min_value=0,
             value=100000000,
-            step=1000000
+            step=1000000,
+            key="revenue_budget_input"
         )
 
-        popularity_input = st.number_input(
+        revenue_popularity_input = st.number_input(
             "🔥 Popularity Score",
             min_value=0.0,
             value=50.0,
-            step=1.0
+            step=1.0,
+            key="revenue_popularity_input"
         )
 
     with col2:
 
-        runtime_input = st.number_input(
+        revenue_runtime_input = st.number_input(
             "⏱️ Runtime (Minutes)",
             min_value=1,
             value=120,
-            step=1
+            step=1,
+            key="revenue_runtime_input"
         )
 
-        rating_input = st.number_input(
+        revenue_rating_input = st.number_input(
             "⭐ Expected Vote Average",
             min_value=0.0,
             max_value=10.0,
             value=6.0,
-            step=0.1
+            step=0.1,
+            key="revenue_rating_input"
         )
+
+    # ==============================
+    # PREDICTION BUTTON
+    # ==============================
 
     st.divider()
 
     if st.button(
-        "🎬 Predict Box Office Revenue"
+        "🎬 Predict Box Office Revenue",
+        key="predict_revenue_button"
     ):
 
         new_movie = pd.DataFrame(
             {
-                "budget": [budget_input],
-                "popularity": [popularity_input],
-                "runtime": [runtime_input],
-                "vote_average": [rating_input]
+                "budget": [revenue_budget_input],
+                "popularity": [revenue_popularity_input],
+                "runtime": [revenue_runtime_input],
+                "vote_average": [revenue_rating_input]
             }
         )
 
-        predicted_revenue = model.predict(
+        predicted_revenue = revenue_model.predict(
             new_movie
         )[0]
 
@@ -1476,13 +1739,30 @@ if page == "📊 Model Comparison":
         rf_predictions
     )
 
+    rf_precision = precision_score(
+        y_test_rf,
+        rf_predictions,
+        zero_division=0
+    )
+
+    rf_recall = recall_score(
+        y_test_rf,
+        rf_predictions,
+        zero_division=0
+    )
+
+    rf_confusion_matrix = confusion_matrix(
+        y_test_rf,
+        rf_predictions
+    )
+
     # ==============================
     # DISPLAY RESULTS
     # ==============================
 
     st.subheader("🤖 Model Performance")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
 
@@ -1531,6 +1811,20 @@ if page == "📊 Model Comparison":
 
         st.write(
             "Predicts expected box office revenue."
+        )
+
+    with col4:
+
+        st.markdown("### 📊 Classification Metrics")
+
+        st.metric(
+            "Precision",
+            f"{rf_precision * 100:.2f}%"
+        )
+
+        st.metric(
+            "Recall",
+            f"{rf_recall * 100:.2f}%"
         )
 
     st.divider()
@@ -1614,24 +1908,37 @@ st.write(
     # T-TEST
     # ==============================
 
-st.subheader("🧪 T-Test: Revenue of Successful vs Unsuccessful Movies")
-
-st.write(
-        "The independent samples t-test compares the average "
-        "revenue of financially successful and unsuccessful movies."
+st.subheader(
+        "🧪 T-Test: Popularity of Successful vs Unsuccessful Movies"
     )
 
-successful_movies = df[
-        df["success"] == 1
-    ]["revenue"].dropna()
+st.write(
+        "The independent samples t-test examines whether the "
+        "average popularity score differs significantly between "
+        "financially successful and unsuccessful movies."
+    )
 
-unsuccessful_movies = df[
+st.write(
+        "**Null Hypothesis (H₀):** The mean popularity of successful "
+        "and unsuccessful movies is equal."
+    )
+
+st.write(
+        "**Alternative Hypothesis (H₁):** The mean popularity of "
+        "successful and unsuccessful movies is different."
+    )
+
+successful_popularity = df[
+        df["success"] == 1
+    ]["popularity"].dropna()
+
+unsuccessful_popularity = df[
         df["success"] == 0
-    ]["revenue"].dropna()
+    ]["popularity"].dropna()
 
 t_stat, p_value = ttest_ind(
-        successful_movies,
-        unsuccessful_movies,
+        successful_popularity,
+        unsuccessful_popularity,
         equal_var=False
     )
 
@@ -1655,21 +1962,25 @@ if p_value < 0.05:
 
         st.success(
             "The result is statistically significant at the 5% "
-            "significance level. This suggests that the average "
-            "revenue differs significantly between successful "
-            "and unsuccessful movies."
+            "significance level. We reject the null hypothesis. "
+            "This suggests that the average popularity differs "
+            "significantly between successful and unsuccessful movies."
         )
 
 else:
 
         st.info(
             "The result is not statistically significant at the "
-            "5% significance level. We do not have enough evidence "
-            "to conclude that the average revenue differs between "
-            "the two groups."
+            "5% significance level. We fail to reject the null "
+            "hypothesis. There is not enough evidence to conclude "
+            "that average popularity differs between successful "
+            "and unsuccessful movies."
         )
 
-st.divider()
+st.info(
+        "A p-value below 0.05 is considered statistically significant "
+        "at the 5% significance level."
+    )
 
     # ==============================
     # CHI-SQUARE TEST
