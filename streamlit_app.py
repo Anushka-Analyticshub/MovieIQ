@@ -477,6 +477,22 @@ min_rating = st.sidebar.slider(
     value=0.0,
     step=0.1
 )
+# ==============================
+# APPLY DATA FILTERS
+# ==============================
+
+filtered_df = df.copy()
+
+# Apply Genre Filter
+if genre_filter != "All":
+    filtered_df = filtered_df[
+        filtered_df["genre"] == genre_filter
+    ]
+
+# Apply Minimum Rating Filter
+filtered_df = filtered_df[
+    filtered_df["vote_average"] >= min_rating
+]
 
 # ==============================
 # OVERVIEW PAGE
@@ -518,10 +534,10 @@ if page == "🏠 Overview":
         "movie revenue using Machine Learning."
     )
 
-    total_movies = len(df)
-    average_revenue = df["revenue"].mean()
-    average_rating = df["vote_average"].mean()
-    average_profit = df["profit"].mean()
+    total_movies = len(filtered_df)
+    average_revenue = filtered_df["revenue"].mean()
+    average_rating = filtered_df["vote_average"].mean()
+    average_profit = filtered_df["profit"].mean()
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -554,15 +570,17 @@ if page == "🏠 Overview":
     st.header("📋 Movie Dataset")
 
     st.write(
-        f"Our dataset contains {df.shape[0]} movies "
-        f"and {df.shape[1]} columns."
+    f"Showing {filtered_df.shape[0]} movies based on the selected filters."
     )
 
+    st.write(
+    f"Showing {len(filtered_df):,} movies based on the selected filters."
+    )
+   
     st.dataframe(
-        df,
-        use_container_width=True
+         filtered_df,
+         use_container_width=True
     )
-
     st.divider()
 
     st.header("🔍 Data Quality Analysis")
@@ -589,8 +607,8 @@ if page == "🏠 Overview":
     )
 
     # Zero budget and revenue analysis
-    zero_budget = (df["budget"] == 0).sum()
-    zero_revenue = (df["revenue"] == 0).sum()
+    zero_budget = (filtered_df["budget"] == 0).sum()
+    zero_revenue = (filtered_df["revenue"] == 0).sum()
 
     col1, col2 = st.columns(2)
 
@@ -624,10 +642,10 @@ if page == "🏠 Overview":
     )
 
     # Calculate success and failure counts
-    successful_movies = (df["success"] == 1).sum()
-    unsuccessful_movies = (df["success"] == 0).sum()
+    successful_movies = (filtered_df["success"] == 1).sum()
+    unsuccessful_movies = (filtered_df["success"] == 0).sum()
 
-    total_movies = len(df)
+    total_movies = len(filtered_df)
 
     # Calculate proportions
     success_percentage = (
@@ -731,7 +749,7 @@ if page == "🔥 Movie Insights":
 
     st.header("🔥 Top 10 Most Popular Movies")
 
-    top_10_popular = df.sort_values(
+    top_10_popular = filtered_df.sort_values(
         by="popularity",
         ascending=False
     ).head(10)
@@ -742,7 +760,7 @@ if page == "🔥 Movie Insights":
 
     st.header("💰 Top 10 Most Profitable Movies")
 
-    top_10_profit = df.sort_values(
+    top_10_profit =  filtered_df.sort_values(
         by="profit",
         ascending=False
     ).head(10)
@@ -760,7 +778,7 @@ if page == "🔥 Movie Insights":
         "based on popularity, runtime, and average audience rating."
     )
     # Calculate average values for successful and unsuccessful movies
-    success_factors = df.groupby("success")[
+    success_factors =  filtered_df.groupby("success")[
         [
             "popularity",
             "runtime",
@@ -804,10 +822,7 @@ if page == "🔥 Movie Insights":
         f"between the two groups in this dataset."
     )
 
-
-# ==============================
-# GENRE LAB PAGE
-# ==============================
+# GENRE LAB
 
 if page == "🎭 Genre Lab":
 
@@ -818,61 +833,68 @@ if page == "🎭 Genre Lab":
         "Select a genre below to discover its financial "
         "and audience insights."
     )
+
     st.subheader("🎭 Movies by Genre")
 
-genre_counts = df["genre"].value_counts()
+    genre_counts = filtered_df["genre"].value_counts()
 
-st.bar_chart(
-    genre_counts
-)
-
-st.divider()
-genres = sorted(df["genre"].unique())
-selected_genre = st.selectbox(
-        "🎬 Select a Genre",
-        genres
+    st.bar_chart(
+        genre_counts
     )
-genre_data = df[
-        df["genre"] == selected_genre
-    ]
-genre_movie_count = len(genre_data)
-genre_avg_revenue = genre_data["revenue"].mean()
-genre_avg_profit = genre_data["profit"].mean()
-genre_avg_rating = genre_data["vote_average"].mean()
 
-st.subheader(
+    st.divider()
+
+    genres = sorted(filtered_df["genre"].unique())
+
+    selected_genre = st.selectbox(
+        "🎬 Select a Genre",
+        genres,
+        key="genre_lab_selectbox"
+    )
+
+    genre_data = filtered_df[
+        filtered_df["genre"] == selected_genre
+    ]
+
+    genre_movie_count = len(genre_data)
+
+    genre_avg_revenue = genre_data["revenue"].mean()
+    genre_avg_profit = genre_data["profit"].mean()
+    genre_avg_rating = genre_data["vote_average"].mean()
+
+    st.subheader(
         f"📊 {selected_genre} Insights"
     )
 
-col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
 
-with col1:
+    with col1:
         st.metric(
             "🎬 Movies",
             f"{genre_movie_count:,}"
         )
 
-with col2:
+    with col2:
         st.metric(
             "💰 Avg Revenue",
             f"${genre_avg_revenue:,.0f}"
         )
 
-with col3:
+    with col3:
         st.metric(
             "📈 Avg Profit",
             f"${genre_avg_profit:,.0f}"
         )
 
-with col4:
+    with col4:
         st.metric(
             "⭐ Avg Rating",
             f"{genre_avg_rating:.2f}"
         )
 
-st.subheader("💰 Revenue vs Profit")
+    st.subheader("💰 Revenue vs Profit")
 
-financial_data = pd.DataFrame({
+    financial_data = pd.DataFrame({
         "Metric": [
             "Average Revenue",
             "Average Profit"
@@ -883,15 +905,15 @@ financial_data = pd.DataFrame({
         ]
     })
 
-st.bar_chart(
+    st.bar_chart(
         financial_data.set_index("Metric")
     )
 
-st.subheader(
+    st.subheader(
         f"🎬 Movies in {selected_genre}"
     )
 
-st.dataframe(
+    st.dataframe(
         genre_data[
             [
                 "title",
@@ -904,7 +926,6 @@ st.dataframe(
         ],
         use_container_width=True
     )
-
 
 # ==============================
 # FINANCIAL ANALYSIS PAGE
@@ -920,9 +941,9 @@ if page == "💰 Financial Analysis":
         "budget and box office revenue."
     )
 
-    average_budget = df["budget"].mean()
-    average_revenue = df["revenue"].mean()
-    average_profit = df["profit"].mean()
+    average_budget = filtered_df["budget"].mean()
+    average_revenue = filtered_df["revenue"].mean()
+    average_profit = filtered_df["profit"].mean()
 
     correlation = df["budget"].corr(
         df["revenue"]
