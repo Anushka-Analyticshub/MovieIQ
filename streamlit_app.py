@@ -568,11 +568,7 @@ if page == "🏠 Overview":
     st.divider()
 
     st.header("📋 Movie Dataset")
-
-    st.write(
-    f"Showing {filtered_df.shape[0]} movies based on the selected filters."
-    )
-
+    
     st.write(
     f"Showing {len(filtered_df):,} movies based on the selected filters."
     )
