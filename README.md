@@ -361,6 +361,10 @@ Feature importance should be interpreted as a measure of model usefulness rather
 
 # 📁 Project Structure
 
+``---
+
+## 📁 Project Structure
+
 ```text
 MovieIQ/
 │
@@ -372,6 +376,8 @@ MovieIQ/
 ├── requirements.txt
 │
 └── README.md
+```
+
 ---
 
 ## ⚙️ Installation & Setup
@@ -382,13 +388,27 @@ To run MovieIQ locally, follow the steps below.
 
 ```bash
 git clone https://github.com/Anushka-Analyticshub/MovieIQ.git
+```
 
-2. cd MovieIQ
+### 2. Navigate to the Project Directory
 
-3.pip install -r requirements.txt
+```bash
+cd MovieIQ
+```
 
-4.streamlit run streamlit_app.py
+### 3. Install Required Dependencies
 
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run the Streamlit Application
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The MovieIQ dashboard will open in your default web browser.
 
 ---
 
@@ -400,7 +420,6 @@ MovieIQ is deployed as an interactive web application using **Streamlit Communit
 https://movieiq-insights.streamlit.app/
 
 The deployed application allows users to explore movie performance, financial trends, genre patterns, statistical relationships, and Machine Learning-based predictions through an interactive dashboard.
-
 
 ---
 
@@ -460,6 +479,32 @@ The MovieIQ project can be further enhanced by:
 - Implementing time-series analysis to study movie industry trends.
 - Adding more advanced interactive visualizations.
 
+---
+
+## 🖼️ Dashboard Preview
+
+The MovieIQ dashboard includes the following interactive sections:
+
+- 🏠 Overview
+- 🔥 Movie Insights
+- 🎭 Genre Lab
+- 💰 Financial Analysis
+- 🎯 Success Predictor
+- 💵 Revenue Predictor
+- 📊 Model Comparison
+- 🧪 Statistical Analysis
+
+Selected screenshots from the dashboard will be added here to provide a visual overview of the project's analytical and predictive capabilities.
+
+---
+
+## 📄 Dashboard Documentation
+
+A complete PDF version of the MovieIQ dashboard is also available for reference.
+
+📥 **[View / Download MovieIQ Dashboard PDF](docs/MovieIQ_Dashboard.pdf)**
+
+The PDF provides a static overview of the complete dashboard, while the live Streamlit application provides a fully interactive experience.
 
 ---
 
