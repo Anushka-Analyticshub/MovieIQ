@@ -372,3 +372,105 @@ MovieIQ/
 ├── requirements.txt
 │
 └── README.md
+---
+
+## ⚙️ Installation & Setup
+
+To run MovieIQ locally, follow the steps below.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Anushka-Analyticshub/MovieIQ.git
+
+2. cd MovieIQ
+
+3.pip install -r requirements.txt
+
+4.streamlit run streamlit_app.py
+
+
+---
+
+## 🚀 Live Application
+
+MovieIQ is deployed as an interactive web application using **Streamlit Community Cloud**.
+
+🔗 **Live Dashboard:**  
+https://movieiq-insights.streamlit.app/
+
+The deployed application allows users to explore movie performance, financial trends, genre patterns, statistical relationships, and Machine Learning-based predictions through an interactive dashboard.
+
+
+---
+
+## 🔑 Key Insights
+
+MovieIQ demonstrates how Data Analytics and Machine Learning can be applied to movie industry data to understand movie performance and predict potential movie success.
+
+The project explores:
+
+- 💰 The relationship between production budget and revenue.
+- 📈 Movie profitability and financial performance.
+- 🎯 Differences between successful and unsuccessful movies.
+- 🔥 Popularity, runtime, and audience rating patterns.
+- 🎭 Movie performance across different genres.
+- 📊 Relationships between numerical movie features.
+- 🧪 Statistical associations between movie characteristics and success.
+- 🤖 Feature importance in Machine Learning predictions.
+
+The project demonstrates an end-to-end Data Analytics and Machine Learning workflow, from data quality analysis and exploratory data analysis to statistical testing, predictive modelling, dashboard development, and cloud deployment.
+
+---
+
+## ⚠️ Limitations
+
+Movie success depends on many factors that may not be included in the current dataset.
+
+Some limitations of the project include:
+
+- The analysis is based on a dataset containing 2,000 movie records.
+- The dataset may not represent the complete global movie industry.
+- Movie success is defined using the relationship between revenue and budget.
+- Marketing and promotional expenditure is not included.
+- Cast and director influence are not considered.
+- Production studio and distribution strategy are not included.
+- Release timing and seasonality are not considered.
+- Audience preferences and social media trends are not captured.
+- Machine Learning predictions depend on the quality and characteristics of the available dataset.
+- Feature importance indicates model usefulness but does not establish causal relationships.
+
+Therefore, MovieIQ predictions should be considered **data-driven estimates rather than guaranteed predictions of future movie success**.
+
+---
+
+## 🔮 Future Scope
+
+The MovieIQ project can be further enhanced by:
+
+- Adding larger and more diverse movie datasets.
+- Integrating real-time movie data through APIs.
+- Including cast, director, production studio, and release date information.
+- Incorporating marketing and promotional expenditure.
+- Improving revenue prediction using advanced regression algorithms.
+- Exploring advanced Machine Learning and Deep Learning techniques.
+- Applying hyperparameter tuning and cross-validation.
+- Adding prediction confidence scores and model explainability.
+- Developing personalized movie recommendation features.
+- Implementing time-series analysis to study movie industry trends.
+- Adding more advanced interactive visualizations.
+
+
+---
+
+## 👩‍💻 Author
+
+**Anushka Gupta**
+
+**BBA — Business Intelligence & Analytics**
+
+**Aspiring Business Analyst | Data Analytics & Business Intelligence Enthusiast**
+
+---
+
+⭐ **MovieIQ — Where Data Meets the Silver Screen.**
